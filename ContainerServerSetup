@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# This script only needs to be run once per server.  It does the following:
+#  - Creates a user name with a high group id, so that the system will create new users with ID's above this and
+#    keep a large range of userid's available for container users.
+#  - Creates a group name with a high group id.  Same reason as the user name.
+#  - Create a podman group.
+# First Need to add a group that forces system to leave us a range of standard group id's across systems.
+if (( $(grep -c "^customgroups" /etc/group ) == 0 )); then
+  groupadd -g 13000 customgroups
+fi
+
+
+# Need to add a user so that new users the system creates are created after this number
+if (( $(grep -c "^customuser" /etc/passwd ) == 0 )); then
+  useradd -u 13000 customuser
+fi
+
+
+# Need to create podman user
+if (( $(grep -c "^podman" /etc/group ) == 0 )); then
+  groupadd -g 5000 podman
+fi
+
+
+
+## Log Rotate
+
+# Change Logrotate so that podman users can update entries in the logrotate.d directory
+#chgrp podman /etc/logrotate.d
+
+# Give permissions to podman to update entries in the logrotate.d directory
+#chmod 775 /etc/logrotate.d
+
+
+
+#
+
+
+
