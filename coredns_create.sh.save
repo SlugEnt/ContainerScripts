@@ -1,8 +1,0 @@
-#!/bin/bash
-
-podman run -d --name=coredns \
-		-p 53:53/udp  \
- 		--privileged
-		-v /opt/data/coredns:/coredns-config \
-		coredns/coredns:latest -conf /coredns-config/Corefile
-
