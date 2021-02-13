@@ -1,0 +1,88 @@
+#!/bin/bash
+
+
+# Creates a user to be utilized by a single container.  The user name will be the same name as the container
+# Updates the subuid and subgid files to utilize an easier to manage and utilize numbering scheme, based upon
+# each user being allocated a whole number starting at an interval of 100000.  For instance 800000, 900000 or
+# 1200000.  
+#  - Sets Password to empty.
+#  - Adds user to podman and syslog group
+#
+
+echo "arg1 = $1"
+user=$1
+echo "user = $1"
+
+if [[ $user  == "" ]]; then
+  echo "No container name provided"
+  exit 1
+fi
+
+
+
+function setSub() {
+  file=$1
+  echo "Processing file:  $file"
+  last=$(tail -n1 /etc/subuid | awk -F: '{print $2}')
+  lastUser=$(tail -n1 /etc/subuid | awk -F: '{print $1}')
+  echo "Last user of /etc/subuid is: $lastUser" 
+
+  if [[ $user != $lastUser ]];then
+   echo "Last user of /etc/subuid is not our new user - $user"
+  else  
+    echo "/etc/subuid - calculating new value for user - $user"
+    if [[ $last -lt 100000 ]]; then    
+      $num4=100000 
+    else
+      if [[ $num4 -lt 1000000 ]]; then
+        num4=$((1 * $last / 100000)) 
+      else 
+        num4=$((10 * $last / 100000))
+      fi
+      echo "step 1 - $num4"
+      num4=$((num4 + 1))
+      echo "step 2 - $num4"
+      num4=$((num4 * 100000))
+      echo "step 3 - $num4"
+    fi
+    echo "The new number is $num4"
+    sed '$d' < $file > /tmp/file.new
+    mv $file /tmp/file.old
+    mv /tmp/file.new $file
+
+    
+    # write the new entry:
+    printf "%s\n" "$user:$num4:65536" >> $file
+  fi
+}
+
+
+
+
+# Add user
+homedir=/home/$user
+pass="1$user1"
+adduser $user --shell /bin/bash --home $homedir --firstuid 7000 --lastuid 8000 --disabled-password
+
+
+# Set Password
+#echo $pass | passwd $user
+
+
+# Add to groups
+usermod -a -G podman,syslog $user
+
+
+# Fix User's Subuid
+fileUID=/etc/subuid
+setSub "$fileUID"
+
+
+# Fix Group's Subuid 
+fileUID=/etc/subgid
+setSub "$fileUID"
+
+
+
+
+
