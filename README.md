@@ -2,6 +2,8 @@
 
 This is a series of scripts to help make it easier to manage and work with Podman.  It is opinionated and in some cases may not be of any use to you.  
 
+Note:  Many of these have been replaced with Ansible scripts.  Those are the ones that start with a double underscore.  The others are used by some of the ansible scripts still.
+
 ## Use Case
 You have one or more servers that you wish to utilize podman to run containerized applictions.  If you are using Pods or Kubernetes then these scripts definitely are of no use to you.  
 
