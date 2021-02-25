@@ -1,0 +1,67 @@
+#!/bin/bash
+
+## Important:  This script has been replaced by an Ansible script!
+##             - It still works and functions, but all new functionality is added to Ansible Script
+
+# This script should be run after the CreateContainerUser  script has run.
+#  Argument 1 - Container name
+#  It will create a log rotation script for the container.  It will then create a symbolic link in the /var/log 
+#  directory that makes it easier to get to the logs for the container.
+container=$1
+echo "Container: $container"
+
+running=$(podman inspect $container | jq '.[] | .State.Running')
+
+if [[ $running == null ]]; then
+  echo "The Container MUST BE running for this script to complete it's actions"
+  exit
+fi
+
+
+logPath=$(podman inspect $container | jq '.[] | .HostConfig.LogConfig.Path')
+
+logPath=$(sed -e 's/^"//' -e 's/"$//' <<<"$logPath")
+echo $logPath
+echo $running
+
+
+
+# Now We need to create a Log Rotate Script for this app.
+rotateDir="/etc/logrotate.d"
+rotateFile=$container
+
+
+
+# If the file does not exist, then create logrotate script
+if  [[ ! -f $rotateFile ]]; then 
+  # First remove any previous entries
+  cd $rotateDir
+  rm -f $rotateFile
+
+  cat  <<EOF >>$rotateFile
+  $logPath
+  {
+    su pgadmin podman
+    rotate 8
+    daily
+    compress
+    missingok
+    notifempty
+  }
+EOF
+
+
+  chmod 644 $rotateFile
+  chown root:root $rotateFile
+  echo "Log rotate file created - $rotateFile"
+  echo 
+else
+  echo "Log Rotate file $rotateFile already exists.  Skipping creation and update."
+fi
+
+
+
+# Create a link in /var/log to easily get to the containers logs
+
+ln -s $logPath /var/log/$container.log
+

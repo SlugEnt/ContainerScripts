@@ -1,0 +1,27 @@
+#!/bin/bash
+
+
+# This script is utilized by Ansible scripts and is required to exist.
+
+# Returns the next available container ID value in the range 7000 - 9999
+
+rc=2
+num=7000
+
+while [ $rc -ne 0 ]
+do
+  value=":$num:"
+#  echo "Value is: $value"
+  grep $value /etc/passwd > /dev/null
+  if [[ $? -eq 0 ]]
+  then
+    num=$(( $num + 1 ))
+  else 
+    rc=0
+  fi
+
+done
+
+echo $num
+#echo "First Available UserID in Container range is: $num"
+
